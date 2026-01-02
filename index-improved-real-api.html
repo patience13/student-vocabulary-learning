@@ -543,50 +543,128 @@
             // 根据主题生成详细的词汇列表
             const vocabularies = generateThemeVocabularies(theme);
 
+            // 去重词汇列表（避免重复）
+            const uniqueVocabularies = [];
+            const seen = new Set();
+            vocabularies.forEach(v => {
+                if (!seen.has(v.chinese)) {
+                    seen.add(v.chinese);
+                    uniqueVocabularies.push(v);
+                }
+            });
+
             // 构建完整的、结构化的prompt
             return `请生成一张儿童识字教学小报，主题是"${themeName}"，场景是"${scene}"。
 
 ## 核心要求：
-这是一张面向5-9岁儿童的中文识字教学图片，必须是完整的信息密集型教学插画，而非简单装饰性图片。
+这是一张面向5-9岁儿童的中文识字教学图片，采用"主画面+底部词语卡片"的分离式布局。
 
-## 输出格式要求：
-- 竖版A4比例（3:4），适合儿童阅读
-- 儿童绘本风格 + 教学小报风格
-- 高饱和度、明亮温暖的色彩
-- 8K分辨率，确保文字清晰可读
+## 词语来源规则（CRITICAL - 必须遵守）：
+**底部词语卡片中的词语必须严格服从主题和场景：**
+1. 所有词语必须是"${themeName}"主题下、"${scene}"场景中"可被看见、可被指认的具体事物"
+2. 严格禁止使用抽象概念词（如：学习、快乐、成长、探索、发现、世界等）
+3. 严格禁止使用情绪/品格/价值观类词语（如：勇敢、友谊、爱心、帮助等）
+4. 严格禁止使用通用儿童教育兜底词
+5. 如果主题是"大自然"、"森林"等自然场景，只能使用：树木、河流、山、花朵、动物等具体可见物体
+6. 如果主题是"太空"，只能使用：星星、月亮、火箭、宇航员等具体可见物体
+7. 如果主题是"海洋"，只能使用：海水、波浪、鱼、珊瑚等具体可见物体
+8. **宁可少生成词语，也不要使用与场景无关的抽象词**
 
-## 必须包含的元素：
+## 布局结构（竖版A4比例，3:4）：
 
-### 1. 顶部标题区（占整体20%）
+### 第一部分：顶部标题区（占整体15%）
 - 大标题："${scene}"（醒目、彩色、儿童手写体风格）
 - 副标题："儿童识字小报"或"${themeName}认知学习"
 - 装饰：主题相关的卡通元素
 
-### 2. 主场景区（占整体60%）
+### 第二部分：主场景插画区（占整体60%）
+**CRITICAL - 主画面必须完全干净，只展示场景插画：**
+
+#### 主画面内容要求：
 - ${themeName}主题下的"${scene}"具体场景
-- 必须是完整的场景插画，包含环境背景
+- 完整的场景插画，包含环境背景
 - 画面要充实，不要留白过多
 - 必须包含8-10个与主题相关的具体物品/元素
+- 高饱和度、明亮温暖的色彩
+- 儿童绘本风格
 
-### 3. 底部词汇学习区（占整体20%）
-以下每个物体必须有清晰的中文标注标签：
-- 标签格式：两行式（上方拼音，下方汉字）
-- 标签样式：彩色贴纸风格，醒目易读
-- 必须标注的物体：${vocabularies.map(v => `${v.chinese}`).join('、')}
+#### 主画面严格禁止事项（必须100%遵守）：
+1. **绝对禁止在主画面中出现任何汉字**
+2. **绝对禁止在主画面中出现任何拼音**
+3. **绝对禁止在主画面中出现任何标签框、贴纸**
+4. **绝对禁止在主画面中出现任何连线、箭头、指引线**
+5. **绝对禁止在主画面中出现任何数字、百分比、分数（如60%、20%、0.6）**
+6. **绝对禁止在主画面中出现任何调试信息、置信度分数**
+7. **绝对禁止在主画面中出现bounding box边框、方框**
+8. **绝对禁止在主画面中出现任何数字编号（如①②③、1.2.3）**
+9. **绝对禁止在主画面中出现任何英文单词**
+10. **绝对禁止在主画面中出现任何控制指令文本（如"PURE ILLUSTRATION ONLY"、"ILLUSTRATION"、"MODE"、"LAYOUT"等）**
+11. **绝对禁止在主画面中出现任何中间状态描述（如"60% - xxx"、"percentage"、"score"等）**
+12. **绝对禁止在主画面中出现任何prompt泄露、模板泄露、系统指令泄露**
 
-## 重点强调：
-1. 这是一张教学用途的识字图片，不是普通插画
-2. 每个标注的物体必须大小适中，便于儿童辨认
-3. 中文文字必须清晰、规范、大小适中
-4. 整体布局要像真正的儿童教学海报
-5. 场景要真实、生动，贴近儿童生活经验
+#### 主画面只允许包含：
+- 场景插画（人物、动物、物品、背景）
+- 装饰图案
+- **主画面必须是纯图片，不能有任何文字元素**
+
+### 第三部分：底部词语卡片区（占整体25%）
+**所有识字词语统一放在画面最底部，以"词语卡片"形式展示：**
+
+#### 词语卡片布局：
+- 将底部区域横向分成多个小卡片格子
+- 每个卡片包含：**小图标 + 汉字 + 拼音**
+- 卡片排列：从左到右，2-3行排列
+- 卡片样式：彩色边框，浅色背景，清晰易读
+
+#### 每个词语卡片必须包含：
+1. **上方：小图标/小插画**
+   - 画出对应物品的简化图标
+   - 例如："黑板"卡片的小图标是一个小黑板样式
+   - 例如："医生"卡片的小图标是一个穿白大褂的小人
+   - 只要求**语义一致**（看起来像那个东西）
+   - **不要求**与主画面中某个具体实例一一对应
+
+2. **下方：文字**
+   - 第一行：拼音（带声调）
+   - 第二行：汉字
+   - 字体：清晰、规范、大小适中
+
+#### 必须展示的词语卡片清单（共${uniqueVocabularies.length}个）：
+${uniqueVocabularies.map((v, i) => `${i + 1}. ${v.chinese}（${v.pinyin}）`).join('\n')}
+
+**注意：以上每个词语必须生成一个独立的卡片，每个词语只出现一次，不能重复。**
+
+#### 词语卡片设计示例：
+每个词语卡片格式如下：
+[方框内：小黑板图标]
+下方：hēi bǎn
+再下方：黑板
+
+## 重点强调（强约束）：
+1. **主画面和底部词语区完全分离**
+2. **主画面中绝对不能有任何文字、拼音、标签、连线**
+3. **所有识字内容只在底部卡片区域展示**
+4. **底部卡片中的小图标只要求语义一致，不需要与主画面中的具体对象对应**
+5. **每个词语只出现一次，不能重复**
+6. **底部卡片排列整齐，适合儿童阅读学习**
 
 ## 风格说明：
 - 使用温暖的色调，以绿色、蓝色、橙色为主
 - 角色设计要可爱、友好
 - 线条清晰，适合儿童认知
+- 8K分辨率，确保文字清晰可读
 
-请确保生成的是一张真正可用于儿童识字教学的信息密集型图片，而不仅仅是一张场景插画。`;
+## 最终自检清单（生成前必须确认）：
+- [ ] 主画面中没有汉字、拼音、标签
+- [ ] 主画面中没有连线、箭头、方框
+- [ ] 主画面中没有数字、百分比、调试信息
+- [ ] 主画面是纯场景插画
+- [ ] 所有词语都在底部卡片区域
+- [ ] 每个词语卡片都有对应的小图标
+- [ ] 词语没有重复，每个只出现一次
+- [ ] 整体适合5-9岁儿童阅读学习
+
+请严格按照以上布局和要求生成图片。`;
         }
 
         // 生成主题词汇
@@ -690,23 +768,112 @@
                 ]
             };
 
-            // 对于自定义主题，使用通用词汇
+            // 对于自定义主题，基于主题和场景智能生成可见物体词汇
             if (!vocabMap[theme]) {
-                return [
-                    { chinese: '学习', pinyin: 'xué xí' },
-                    { chinese: '快乐', pinyin: 'kuài lè' },
-                    { chinese: '朋友', pinyin: 'péng you' },
-                    { chinese: '帮助', pinyin: 'bāng zhù' },
-                    { chinese: '安全', pinyin: 'ān quán' },
-                    { chinese: '知识', pinyin: 'zhī shi' },
-                    { chinese: '成长', pinyin: 'chéng zhǎng' },
-                    { chinese: '探索', pinyin: 'tàn suǒ' },
-                    { chinese: '发现', pinyin: 'fā xiàn' },
-                    { chinese: '世界', pinyin: 'shì jiè' }
-                ];
+                return this.generateSceneBasedVocabularies(theme, customSceneName || '');
             }
 
             return vocabMap[theme];
+        }
+
+        // 基于场景智能生成可见物体词汇（只生成具体可见物体，禁止抽象概念）
+        function generateSceneBasedVocabularies(theme, scene) {
+            const themeName = customThemeName || theme;
+            const sceneName = scene || '';
+
+            // 基于主题和场景关键词，智能生成该场景中"可被看见、可被指认"的具体物体词汇
+            // 严格禁止：抽象概念、情绪词、价值观词、通用教育词
+            const sceneVocabMap = {
+                // 自然场景类
+                '大自然': [
+                    { chinese: '树木', pinyin: 'shù mù' },
+                    { chinese: '河流', pinyin: 'hé liú' },
+                    { chinese: '山', pinyin: 'shān' },
+                    { chinese: '瀑布', pinyin: 'pù bù' },
+                    { chinese: '花朵', pinyin: 'huā duǒ' },
+                    { chinese: '草地', pinyin: 'cǎo dì' },
+                    { chinese: '鹿', pinyin: 'lù' },
+                    { chinese: '兔子', pinyin: 'tù zi' },
+                    { chinese: '鸟', pinyin: 'niǎo' },
+                    { chinese: '太阳', pinyin: 'tài yáng' }
+                ],
+                '森林': [
+                    { chinese: '大树', pinyin: 'dà shù' },
+                    { chinese: '灌木', pinyin: 'guàn mù' },
+                    { chinese: '蘑菇', pinyin: 'mó gu' },
+                    { chinese: '松鼠', pinyin: 'sōng shǔ' },
+                    { chinese: '狐狸', pinyin: 'hú li' },
+                    { chinese: '野猪', pinyin: 'yě zhū' },
+                    { chinese: '树叶', pinyin: 'shù yè' },
+                    { chinese: '树干', pinyin: 'shù gàn' },
+                    { chinese: '小径', pinyin: 'xiǎo jìng' },
+                    { chinese: '阳光', pinyin: 'yáng guāng' }
+                ],
+                '海洋': [
+                    { chinese: '海水', pinyin: 'hǎi shuǐ' },
+                    { chinese: '波浪', pinyin: 'bō làng' },
+                    { chinese: '沙滩', pinyin: 'shā tān' },
+                    { chinese: '贝壳', pinyin: 'bèi ké' },
+                    { chinese: '海星', pinyin: 'hǎi xīng' },
+                    { chinese: '螃蟹', pinyin: 'páng xiè' },
+                    { chinese: '鱼', pinyin: 'yú' },
+                    { chinese: '海龟', pinyin: 'hǎi guī' },
+                    { chinese: '珊瑚', pinyin: 'shān hú' },
+                    { chinese: '船只', pinyin: 'chuán zhī' }
+                ],
+                '太空': [
+                    { chinese: '星星', pinyin: 'xīng xing' },
+                    { chinese: '月亮', pinyin: 'yuè liang' },
+                    { chinese: '地球', pinyin: 'dì qiú' },
+                    { chinese: '火箭', pinyin: 'huǒ jiàn' },
+                    { chinese: '宇航员', pinyin: 'yǔ háng yuán' },
+                    { chinese: '卫星', pinyin: 'wèi xīng' },
+                    { chinese: '飞船', pinyin: 'fēi chuán' },
+                    { chinese: '行星', pinyin: 'xíng xīng' },
+                    { chinese: '银河', pinyin: 'yín hé' },
+                    { chinese: '太空舱', pinyin: 'tài kōng cāng' }
+                ],
+                '城市': [
+                    { chinese: '高楼', pinyin: 'gāo lóu' },
+                    { chinese: '马路', pinyin: 'mǎ lù' },
+                    { chinese: '汽车', pinyin: 'qì chē' },
+                    { chinese: '红绿灯', pinyin: 'hóng lǜ dēng' },
+                    { chinese: '人行道', pinyin: 'rén xíng dào' },
+                    { chinese: '商店', pinyin: 'shāng diàn' },
+                    { chinese: '路灯', pinyin: 'lù dēng' },
+                    { chinese: '公交站', pinyin: 'gōng jiāo zhàn' },
+                    { chinese: '广告牌', pinyin: 'guǎng gào pái' },
+                    { chinese: '斑马线', pinyin: 'bān mǎ xiàn' }
+                ],
+                '街道': [
+                    { chinese: '道路', pinyin: 'dào lù' },
+                    { chinese: '人行道', pinyin: 'rén xíng dào' },
+                    { chinese: '路牌', pinyin: 'lù pái' },
+                    { chinese: '垃圾桶', pinyin: 'lā jī tǒng' },
+                    { chinese: '消防栓', pinyin: 'xiāo fáng shuān' },
+                    { chinese: '自行车', pinyin: 'zì xíng chē' },
+                    { chinese: '电动车', pinyin: 'diàn dòng chē' },
+                    { chinese: '行人', pinyin: 'xíng rén' },
+                    { chinese: '路灯', pinyin: 'lù dēng' },
+                    { chinese: '树木', pinyin: 'shù mù' }
+                ]
+            };
+
+            // 检查主题名称是否匹配
+            for (const [key, vocabs] of Object.entries(sceneVocabMap)) {
+                if (themeName.includes(key) || sceneName.includes(key)) {
+                    return vocabs;
+                }
+            }
+
+            // 如果没有匹配，生成通用的可见物体词（而非抽象概念）
+            return [
+                { chinese: '物品', pinyin: 'wù pǐn' },
+                { chinese: '工具', pinyin: 'gōng jù' },
+                { chinese: '装饰', pinyin: 'zhuāng shì' },
+                { chinese: '背景', pinyin: 'bèi jǐng' },
+                { chinese: '角色', pinyin: 'jué sè' }
+            ];
         }
 
         // 开始生成
